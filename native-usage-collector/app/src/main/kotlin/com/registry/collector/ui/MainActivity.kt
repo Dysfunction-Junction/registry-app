@@ -21,6 +21,10 @@ import com.google.android.material.textfield.TextInputLayout
 import com.google.firebase.auth.FirebaseAuth
 import com.registry.collector.R
 import com.registry.collector.data.SyncPreferences
+import com.registry.collector.switchlog.SharedPrefsCursorStore
+import com.registry.collector.switchlog.SwitchLogScheduler
+import com.registry.collector.switchlog.SwitchLogStatusReader
+import com.registry.collector.switchlog.switchLogDir
 import com.registry.collector.worker.CollectorScheduler
 import dagger.hilt.android.AndroidEntryPoint
 import java.text.SimpleDateFormat
@@ -55,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var lastSyncText: TextView
     private lateinit var syncNowButton: Button
     private lateinit var syncScheduledText: TextView
+    private lateinit var switchLogStatus: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -155,6 +160,10 @@ class MainActivity : AppCompatActivity() {
         root.addView(grantPermissionButton)
         root.addView(syncSection)
 
+        // Switch-log status sits outside syncSection, which is hidden when signed out.
+        switchLogStatus = TextView(this).apply { setPadding(0, padding, 0, 0) }
+        root.addView(switchLogStatus)
+
         setContentView(root)
     }
 
@@ -177,6 +186,8 @@ class MainActivity : AppCompatActivity() {
         }
         grantPermissionButton.visibility = if (hasPermission) View.GONE else View.VISIBLE
 
+        updateSwitchLogStatus(hasPermission)
+
         // Sync section — only show and schedule when signed in AND permission granted
         val isReady = CollectorScheduler.isSyncReady(this)
         syncSection.visibility = if (isReady) View.VISIBLE else View.GONE
@@ -196,6 +207,20 @@ class MainActivity : AppCompatActivity() {
             // Cancel periodic worker if auth or permission is revoked
             CollectorScheduler.cancel(this)
         }
+    }
+
+    private fun updateSwitchLogStatus(hasPermission: Boolean) {
+        if (hasPermission) SwitchLogScheduler.enqueueBackfillIfNeeded(this)
+        val store = SharedPrefsCursorStore(this)
+        val st = SwitchLogStatusReader.read(switchLogDir(this))
+        val none = getString(R.string.switch_log_none)
+        val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+        fun at(ms: Long?) = if (ms == null || ms <= 0L) none else fmt.format(Date(ms))
+        switchLogStatus.text = getString(
+            R.string.switch_log_status,
+            st.fileCount, st.lineCount, at(st.firstTs), at(st.lastTs),
+            at(store.lastRunMs()), store.lastRunEvents(), at(store.getBackfillEarliest()),
+        )
     }
 
     private fun signIn() {

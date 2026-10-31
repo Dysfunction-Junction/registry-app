@@ -12,4 +12,11 @@
     <string name="sync_scheduled">Next sync in ~6 hours</string>
     <string name="signed_in_as">Signed in as %1$s</string>
     <string name="not_signed_in">Not signed in</string>
+    <string name="switch_log_status">Switch log (local only)
+Files: %1$d, lines: %2$d
+First: %3$s
+Last: %4$s
+Last run: %5$s, %6$d new events
+Earliest event from first backfill: %7$s</string>
+    <string name="switch_log_none">none</string>
 </resources>
