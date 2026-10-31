@@ -76,8 +76,8 @@ class SwitchLogRunnerTest {
 
     @Test fun partialWriteThenRetryDedupes() {
         // Two months of events; the second month's file is blocked by a directory, so month one is written, then failure.
-        val dec = 1_798_000_000_000L // 2026-12-23
-        now = 1_800_000_000_000L // 2027-01
+        val dec = 1_798_632_000_000L // 2026-12-30 UTC
+        now = 1_798_891_200_000L // 2027-01-02 UTC (within 14-day lookback)
         val janTs = now - 2_000_000
         source.events = listOf(fg(dec, "a"), fg(janTs, "b"))
         root.mkdirs()
