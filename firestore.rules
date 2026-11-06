@@ -77,5 +77,19 @@ service cloud.firestore {
     match /second_helpings_audit/{auditId} {
       allow read, write: if true;
     }
+    // Procurement module (synced from oakridge-procurement export_matrix.py).
+    // Without these, unmatched paths are denied: on-hand counts, par edits
+    // and "Save PO to Cloud" fail silently and the app falls back to the
+    // bundled JSON. Same open policy as the collections above (no Firebase
+    // Auth in 2nd Helpings yet); tighten together when auth lands.
+    match /second_helpings_procurement/{sku} {
+      allow read, write: if true;
+    }
+    match /second_helpings_purchase_orders/{orderId} {
+      allow read, create: if true;
+    }
+    match /second_helpings_meta/{metaId} {
+      allow read, write: if true;
+    }
   }
 }
